@@ -12,6 +12,7 @@ def create_sequences(data, seq_length, pred_length, overlap_length):
         targets.append(target)
 
     sequences = torch.stack(sequences)
+    # sequences = sequences.unsqueeze(0)
     targets = torch.stack(targets)
     targets = targets.flatten(1, 2)
 

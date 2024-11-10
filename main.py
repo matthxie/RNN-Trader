@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader, TensorDataset
+import pandas as pd
 from rnn import RNN
 import dataset
-import pandas as pd
 
 device = (
     torch.device("cuda")
@@ -12,7 +13,8 @@ device = (
 )
 
 num_features = 5
-batch_size = 100
+train_batch_size = 100
+test_batch_size = 100
 num_iterations = 8000
 num_epochs = 3
 seq_length = 48
@@ -43,12 +45,13 @@ test_data, test_labels = dataset.create_sequences(
     data[split:], seq_length, pred_length, overlap_length
 )
 
-model = RNN(input_dim, hidden_dim, output_dim, num_layers, pred_length)
+train = TensorDataset(train_data, train_labels)
+test = TensorDataset(test_data, test_labels)
 
-train_data.to(device)
-train_labels.to(device)
-test_data.to(device)
-test_labels.to(device)
+train_loader = DataLoader(train, batch_size=train_batch_size, shuffle=True)
+test_loader = DataLoader(test, batch_size=test_batch_size, shuffle=True)
+
+model = RNN(input_dim, hidden_dim, output_dim, num_layers, pred_length)
 model.to(device)
 
 criterion = nn.MSELoss()
@@ -57,13 +60,15 @@ optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 count = 0
 
 for epoch in range(num_epochs):
-    for i in range(train_data.shape[0]):
+    for batch, targets in train_loader:
+        batch, targets = batch.to(device), targets.to(device)
         model.train()
+
+        output = model(batch)
+
+        loss = criterion(output, targets)
+
         optimizer.zero_grad()
-
-        output = model(train_data[i])
-
-        loss = criterion(output, train_labels[i])
         loss.backward()
         optimizer.step()
 
@@ -71,13 +76,14 @@ for epoch in range(num_epochs):
 
         if count % 250 == 0:
             model.eval()
-            for j in range(test_data.shape[0]):
+            for batch, targets in train_loader:
+                batch, targets = batch.to(device), targets.to(device)
                 accuracy = 0
                 total = 0
 
-                output = model(test_data[j])
+                output = model(batch)
 
-                mse = criterion(output, test_labels[j])
+                mse = criterion(output, targets)
                 accuracy += mse.item()
                 total += 1
 

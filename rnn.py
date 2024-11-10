@@ -15,7 +15,7 @@ class RNN(nn.Module):
             hidden_dim,
             num_layers,
             nonlinearity="relu",
-            batch_first=False,
+            batch_first=True,
             dropout=0.0,
             bidirectional=False,
         )
@@ -23,6 +23,6 @@ class RNN(nn.Module):
 
     def forward(self, x):
         out, _ = self.rnn(x)
-        out = self.mlp(out[-1, :])
+        out = self.mlp(out[:, -1, :])
 
         return out
