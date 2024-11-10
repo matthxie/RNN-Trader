@@ -16,7 +16,7 @@ num_features = 5
 train_batch_size = 100
 test_batch_size = 100
 num_iterations = 8000
-num_epochs = 3
+num_epochs = 4
 seq_length = 48
 pred_length = 10
 overlap_length = 47
@@ -25,13 +25,12 @@ seq_dim = 28
 loss_list = []
 iteration_list = []
 accuracy_list = []
-count = 0
 
 input_dim = 5
-hidden_dim = 10
+hidden_dim = 20
 output_dim = 5
 num_layers = 1
-lr = 1e-3
+lr = 1e-4
 
 data = pd.read_csv("TQQQ15min.csv")
 data = data[["open", "high", "low", "close", "volume"]]
@@ -96,3 +95,5 @@ for epoch in range(num_epochs):
                     count, loss, accuracy / total
                 )
             )
+
+torch.save(model.state_dict(), "rnn_model.pth")
