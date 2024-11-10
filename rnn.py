@@ -21,6 +21,14 @@ class RNN(nn.Module):
         )
         self.mlp = nn.Linear(hidden_dim, output_dim * pred_length)
 
+        self.create_weights()
+
+    def create_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                nn.init.constant_(m.bias, 0)
+
     def forward(self, x):
         out, _ = self.rnn(x)
         out = self.mlp(out[:, -1, :])
