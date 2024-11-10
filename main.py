@@ -12,7 +12,8 @@ device = (
     else torch.device("cpu")
 )
 
-num_features = 5
+input_features = ["open", "high", "low", "close", "volume"]
+target_features = ["high", "low"]
 train_batch_size = 100
 test_batch_size = 100
 num_iterations = 8000
@@ -26,22 +27,17 @@ loss_list = []
 iteration_list = []
 accuracy_list = []
 
-input_dim = 5
+input_dim = len(input_features)
 hidden_dim = 20
-output_dim = 5
+output_dim = len(target_features)
 num_layers = 1
 lr = 1e-4
 
 data = pd.read_csv("TQQQ15min.csv")
-data = data[["open", "high", "low", "close", "volume"]]
-data = torch.tensor(data.values, dtype=torch.float32)
+data = data[input_features]
 
-split = int(data.shape[0] * 0.8)
-train_data, train_labels = dataset.create_sequences(
-    data[:split], seq_length, pred_length, overlap_length
-)
-test_data, test_labels = dataset.create_sequences(
-    data[split:], seq_length, pred_length, overlap_length
+train_data, train_labels, test_data, test_labels = dataset.create_sequences(
+    data, seq_length, pred_length, overlap_length, target_features, 0.8
 )
 
 train = TensorDataset(train_data, train_labels)
