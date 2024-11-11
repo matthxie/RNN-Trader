@@ -2,7 +2,7 @@ import torch.nn as nn
 
 
 class RNN(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, num_layers, pred_length):
+    def __init__(self, input_dim, hidden_dim, output_dim, num_layers):
         super(RNN, self).__init__()
 
         self.input_dim = input_dim
@@ -19,7 +19,7 @@ class RNN(nn.Module):
             dropout=0.0,
             bidirectional=False,
         )
-        self.mlp = nn.Linear(hidden_dim, output_dim * pred_length)
+        self.mlp = nn.Linear(hidden_dim, output_dim)
 
         self.create_weights()
 

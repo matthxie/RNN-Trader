@@ -17,7 +17,7 @@ target_features = ["high", "low"]
 train_batch_size = 100
 test_batch_size = 100
 num_iterations = 8000
-num_epochs = 4
+num_epochs = 3
 seq_length = 48
 pred_length = 10
 overlap_length = 47
@@ -29,7 +29,7 @@ accuracy_list = []
 
 input_dim = len(input_features)
 hidden_dim = 20
-output_dim = len(target_features)
+output_dim = len(target_features) * pred_length
 num_layers = 1
 lr = 1e-4
 
@@ -46,7 +46,7 @@ test = TensorDataset(test_data, test_labels)
 train_loader = DataLoader(train, batch_size=train_batch_size, shuffle=True)
 test_loader = DataLoader(test, batch_size=test_batch_size, shuffle=True)
 
-model = RNN(input_dim, hidden_dim, output_dim, num_layers, pred_length)
+model = RNN(input_dim, hidden_dim, output_dim, num_layers)
 model.to(device)
 
 criterion = nn.MSELoss()
@@ -59,9 +59,9 @@ for epoch in range(num_epochs):
         batch, targets = batch.to(device), targets.to(device)
         model.train()
 
-        output = model(batch)
+        outputs = model(batch)
 
-        loss = criterion(output, targets)
+        loss = criterion(outputs, targets)
 
         optimizer.zero_grad()
         loss.backward()
@@ -76,9 +76,9 @@ for epoch in range(num_epochs):
                 accuracy = 0
                 total = 0
 
-                output = model(batch)
+                outputs = model(batch)
 
-                mse = criterion(output, targets)
+                mse = criterion(outputs, targets)
                 accuracy += mse.item()
                 total += 1
 

@@ -1,5 +1,4 @@
 import torch
-import pandas as pd
 
 
 def create_sequences(
@@ -22,6 +21,7 @@ def create_sequences(
 
     sequences = torch.stack(sequences)
     targets = torch.stack(targets)
+
     targets = targets.flatten(1, 2)
 
     split = int(sequences.shape[0] * split_percent)
