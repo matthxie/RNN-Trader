@@ -12,17 +12,26 @@ device = (
     else torch.device("cpu")
 )
 
-input_features = ["open", "high", "low", "close", "volume"]
+input_features = [
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "average",
+    "barCount",
+    "ema10",
+    "ema50",
+]
 target_features = ["high", "low"]
 train_batch_size = 100
 test_batch_size = 100
 num_iterations = 8000
-num_epochs = 4
+num_epochs = 8
 seq_length = 48
 pred_length = 10
 overlap_length = 47
 
-seq_dim = 28
 loss_list = []
 iteration_list = []
 accuracy_list = []
@@ -30,7 +39,8 @@ accuracy_list = []
 input_dim = len(input_features)
 hidden_dim = 20
 output_dim = len(target_features) * pred_length
-num_layers = 1
+num_layers = 2
+lr = 1e-4
 
 data = pd.read_csv("TQQQ15min.csv")
 data = data[input_features]
@@ -53,12 +63,11 @@ label = test_labels[index]
 with torch.no_grad():
     prediction = model(input.unsqueeze(0).to(device)).to("cpu")
 
-label = label.view(pred_length, output_dim // pred_length)
-prediction = prediction.view(pred_length, output_dim // pred_length)
+label = label.view(-1, len(target_features))
+prediction = prediction.view(-1, len(target_features))
 
 plt.figure(figsize=(10, 6))
 
-# Plotting each class on the same graph
 plt.plot(range(seq_length), input[:, 0], label="Input Sequence - low", color="gray")
 plt.plot(
     range(seq_length, seq_length + pred_length),
@@ -91,7 +100,6 @@ plt.plot(
     linestyle="dashed",
 )
 
-# Labels and legend
 plt.xlabel("Time Steps")
 plt.ylabel("Value")
 plt.title("Sequential Data Prediction using RNN")

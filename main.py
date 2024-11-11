@@ -12,25 +12,34 @@ device = (
     else torch.device("cpu")
 )
 
-input_features = ["open", "high", "low", "close", "volume"]
+input_features = [
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "average",
+    "barCount",
+    "ema10",
+    "ema50",
+]
 target_features = ["high", "low"]
 train_batch_size = 100
 test_batch_size = 100
 num_iterations = 8000
-num_epochs = 3
+num_epochs = 8
 seq_length = 48
 pred_length = 10
 overlap_length = 47
 
-seq_dim = 28
 loss_list = []
 iteration_list = []
 accuracy_list = []
 
 input_dim = len(input_features)
-hidden_dim = 20
+hidden_dim = 32
 output_dim = len(target_features) * pred_length
-num_layers = 1
+num_layers = 2
 lr = 1e-4
 
 data = pd.read_csv("TQQQ15min.csv")
@@ -76,7 +85,8 @@ for epoch in range(num_epochs):
                 accuracy = 0
                 total = 0
 
-                outputs = model(batch)
+                with torch.no_grad():
+                    outputs = model(batch)
 
                 mse = criterion(outputs, targets)
                 accuracy += mse.item()
