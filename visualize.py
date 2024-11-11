@@ -17,17 +17,17 @@ input_features = [
     "high",
     "low",
     "close",
-    "volume",
     "average",
-    "barCount",
+    # "volume",
+    # "barCount",
     "ema10",
     "ema50",
 ]
 target_features = ["high", "low"]
-train_batch_size = 100
+train_batch_size = 64
 test_batch_size = 100
 num_iterations = 8000
-num_epochs = 8
+num_epochs = 3
 seq_length = 48
 pred_length = 10
 overlap_length = 47
@@ -37,7 +37,7 @@ iteration_list = []
 accuracy_list = []
 
 input_dim = len(input_features)
-hidden_dim = 20
+hidden_dim = 64
 output_dim = len(target_features) * pred_length
 num_layers = 2
 lr = 1e-4

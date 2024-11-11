@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 import pandas as pd
 from rnn import RNN
@@ -17,17 +18,17 @@ input_features = [
     "high",
     "low",
     "close",
-    "volume",
     "average",
-    "barCount",
+    # "volume",
+    # "barCount",
     "ema10",
     "ema50",
 ]
 target_features = ["high", "low"]
-train_batch_size = 100
-test_batch_size = 100
+train_batch_size = 64
+test_batch_size = 258
 num_iterations = 8000
-num_epochs = 8
+num_epochs = 3
 seq_length = 48
 pred_length = 10
 overlap_length = 47
@@ -37,7 +38,7 @@ iteration_list = []
 accuracy_list = []
 
 input_dim = len(input_features)
-hidden_dim = 32
+hidden_dim = 64
 output_dim = len(target_features) * pred_length
 num_layers = 2
 lr = 1e-4
@@ -59,7 +60,14 @@ model = RNN(input_dim, hidden_dim, output_dim, num_layers)
 model.to(device)
 
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+scheduler = optim.lr_scheduler.CyclicLR(
+    optimizer,
+    base_lr=1e-6,  # Minimum learning rate
+    max_lr=1e-3,  # Maximum learning rate
+    step_size_up=2500,  # Number of iterations to reach max_lr
+    mode="triangular",  # Strategy for the cyclic pattern
+)
 
 count = 0
 
@@ -75,6 +83,7 @@ for epoch in range(num_epochs):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        scheduler.step()
 
         count += 1
 
