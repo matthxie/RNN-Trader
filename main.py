@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
+from sklearn.preprocessing import MinMaxScaler
+import joblib
 import pandas as pd
 from rnn import RNN
 import dataset
@@ -19,35 +21,44 @@ input_features = [
     "low",
     "close",
     "average",
-    # "volume",
+    "volume",
     # "barCount",
-    "ema10",
-    "ema50",
+    # "ema10",
+    # "ema50",
 ]
 target_features = ["high", "low"]
 train_batch_size = 64
 test_batch_size = 258
 num_iterations = 8000
 num_epochs = 3
-seq_length = 48
-pred_length = 10
+seq_length = 15
+pred_length = 3
 overlap_length = 47
 
-loss_list = []
+train_loss_list = []
 iteration_list = []
-accuracy_list = []
+test_loss_list = []
 
 input_dim = len(input_features)
-hidden_dim = 64
+hidden_dim = 32
 output_dim = len(target_features) * pred_length
-num_layers = 2
+num_layers = 1
 lr = 1e-4
 
 data = pd.read_csv("TQQQ15min.csv")
 data = data[input_features]
+data_scaler = MinMaxScaler()
+target_scaler = MinMaxScaler()
 
 train_data, train_labels, test_data, test_labels = dataset.create_sequences(
-    data, seq_length, pred_length, overlap_length, target_features, 0.8
+    data,
+    seq_length,
+    pred_length,
+    overlap_length,
+    target_features,
+    0.8,
+    data_scaler,
+    target_scaler,
 )
 
 train = TensorDataset(train_data, train_labels)
@@ -60,13 +71,13 @@ model = RNN(input_dim, hidden_dim, output_dim, num_layers)
 model.to(device)
 
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 scheduler = optim.lr_scheduler.CyclicLR(
     optimizer,
-    base_lr=1e-6,  # Minimum learning rate
-    max_lr=1e-3,  # Maximum learning rate
+    base_lr=1e-8,  # Minimum learning rate
+    max_lr=1e-4,  # Maximum learning rate
     step_size_up=2500,  # Number of iterations to reach max_lr
-    mode="triangular",  # Strategy for the cyclic pattern
+    mode="triangular2",  # Strategy for the cyclic pattern
 )
 
 count = 0
@@ -102,8 +113,8 @@ for epoch in range(num_epochs):
                 total += 1
 
             iteration_list.append(count)
-            loss_list.append(loss)
-            accuracy_list.append(accuracy / total)
+            train_loss_list.append(loss)
+            test_loss_list.append(accuracy / total)
 
             print(
                 "Iteration: {}  Train Loss: {}  Test MSE: {}".format(
@@ -112,3 +123,5 @@ for epoch in range(num_epochs):
             )
 
 torch.save(model.state_dict(), "rnn_model.pth")
+joblib.dump(data_scaler, "data_scaler.save")
+joblib.dump(target_scaler, "target_scaler.save")

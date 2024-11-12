@@ -2,7 +2,14 @@ import torch
 
 
 def create_sequences(
-    data, seq_length, pred_length, overlap_length, target_features, split_percent
+    data,
+    seq_length,
+    pred_length,
+    overlap_length,
+    target_features,
+    split_percent,
+    data_scaler,
+    target_scaler,
 ):
     sequences = []
     targets = []
@@ -11,6 +18,11 @@ def create_sequences(
 
     data = torch.tensor(data.values, dtype=torch.float32)
     target_data = torch.tensor(target_data.values, dtype=torch.float32)
+
+    data = torch.tensor(data_scaler.fit_transform(data), dtype=torch.float32)
+    target_data = torch.tensor(
+        target_scaler.fit_transform(target_data), dtype=torch.float32
+    )
 
     for i in range(len(data) - seq_length - pred_length):
         seq = data[i : i + seq_length]
