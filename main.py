@@ -111,7 +111,7 @@ for epoch in range(num_epochs):
 
     # eval on test data
     model.eval()
-    for batch, targets in train_loader:
+    for batch, targets in test_loader:
         batch, targets = batch.to(device), targets.to(device)
         accuracy = 0
         total = 0
