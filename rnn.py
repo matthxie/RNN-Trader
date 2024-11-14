@@ -2,7 +2,7 @@ import torch.nn as nn
 
 
 class RNN(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, num_layers):
+    def __init__(self, input_dim, hidden_dim, output_dim, num_layers, dropout=0.4):
         super(RNN, self).__init__()
 
         self.input_dim = input_dim
@@ -18,6 +18,9 @@ class RNN(nn.Module):
             batch_first=True,
             dropout=0.0,
             bidirectional=False,
+        )
+        self.gru = nn.GRU(
+            input_dim, hidden_dim, num_layers, batch_first=True, dropout=dropout
         )
         self.mlp = nn.Linear(hidden_dim, output_dim)
 
