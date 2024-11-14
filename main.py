@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.preprocessing import MinMaxScaler
 import joblib
 import pandas as pd
+import wandb
 from rnn import RNN
 import dataset
 
@@ -20,7 +21,7 @@ input_features = [
     "high",
     "low",
     "close",
-    "average",
+    # "average",
     "volume",
     # "barCount",
     # "ema10",
@@ -30,9 +31,9 @@ target_features = ["high", "low"]
 train_batch_size = 64
 test_batch_size = 258
 num_iterations = 8000
-num_epochs = 3
+num_epochs = 80
 seq_length = 15
-pred_length = 3
+pred_length = 8
 overlap_length = 47
 
 train_loss_list = []
@@ -42,7 +43,7 @@ test_loss_list = []
 input_dim = len(input_features)
 hidden_dim = 32
 output_dim = len(target_features) * pred_length
-num_layers = 1
+num_layers = 5
 lr = 1e-4
 
 data = pd.read_csv("TQQQ15min.csv")
@@ -80,6 +81,16 @@ scheduler = optim.lr_scheduler.CyclicLR(
     mode="triangular2",  # Strategy for the cyclic pattern
 )
 
+wandb.init(
+    project="RNN Trader",
+    config={
+        "learning_rate": 0.0001,
+        "architecture": "GRU",
+        "dataset": "TQQQ-15min",
+        "epochs": 90,
+    },
+)
+
 count = 0
 
 for epoch in range(num_epochs):
@@ -98,30 +109,32 @@ for epoch in range(num_epochs):
 
         count += 1
 
-        if count % 250 == 0:
-            model.eval()
-            for batch, targets in train_loader:
-                batch, targets = batch.to(device), targets.to(device)
-                accuracy = 0
-                total = 0
+    # eval on test data
+    model.eval()
+    for batch, targets in train_loader:
+        batch, targets = batch.to(device), targets.to(device)
+        accuracy = 0
+        total = 0
 
-                with torch.no_grad():
-                    outputs = model(batch)
+        with torch.no_grad():
+            outputs = model(batch)
 
-                mse = criterion(outputs, targets)
-                accuracy += mse.item()
-                total += 1
+        mse = criterion(outputs, targets)
+        accuracy += mse.item()
+        total += 1
 
-            iteration_list.append(count)
-            train_loss_list.append(loss)
-            test_loss_list.append(accuracy / total)
+    iteration_list.append(count)
+    train_loss_list.append(loss)
+    test_loss_list.append(accuracy / total)
 
-            print(
-                "Iteration: {}  Train Loss: {}  Test MSE: {}".format(
-                    count, loss, accuracy / total
-                )
-            )
+    print(
+        "Iteration: {}  Train Loss: {}  Test Loss: {}".format(
+            count, loss, accuracy / total
+        )
+    )
+    wandb.log({"Train Loss": loss, "Test Loss:": accuracy / total})
 
+wandb.finish()
 torch.save(model.state_dict(), "rnn_model.pth")
 joblib.dump(data_scaler, "data_scaler.save")
 joblib.dump(target_scaler, "target_scaler.save")

@@ -18,7 +18,7 @@ input_features = [
     "high",
     "low",
     "close",
-    "average",
+    # "average",
     "volume",
     # "barCount",
     # "ema10",
@@ -30,7 +30,7 @@ test_batch_size = 258
 num_iterations = 8000
 num_epochs = 2
 seq_length = 15
-pred_length = 3
+pred_length = 8
 overlap_length = 47
 
 train_loss_list = []
@@ -40,7 +40,7 @@ test_loss_list = []
 input_dim = len(input_features)
 hidden_dim = 32
 output_dim = len(target_features) * pred_length
-num_layers = 1
+num_layers = 5
 lr = 1e-4
 
 data = pd.read_csv("TQQQ15min.csv")
