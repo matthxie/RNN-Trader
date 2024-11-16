@@ -1,6 +1,6 @@
 import torch
-import torch.nn as nn
 import torch.optim as optim
+import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.preprocessing import MinMaxScaler
 import joblib
@@ -21,19 +21,18 @@ input_features = [
     "high",
     "low",
     "close",
-    # "average",
+    "average",
     "volume",
     # "barCount",
-    # "ema10",
-    # "ema50",
+    "ema10",
+    "ema50",
 ]
 target_features = ["high", "low"]
 train_batch_size = 64
-test_batch_size = 258
-num_iterations = 8000
-num_epochs = 80
+test_batch_size = 1024
+num_epochs = 20
 seq_length = 15
-pred_length = 8
+pred_length = 3
 overlap_length = 47
 
 train_loss_list = []
@@ -41,10 +40,11 @@ iteration_list = []
 test_loss_list = []
 
 input_dim = len(input_features)
-hidden_dim = 32
-output_dim = len(target_features) * pred_length
-num_layers = 5
-lr = 1e-4
+hidden_dim = 64
+output_dim = len(target_features)
+num_layers = 2
+dropout = 0.0
+lr = 1e-3
 
 data = pd.read_csv("TQQQ15min.csv")
 data = data[input_features]
@@ -66,28 +66,28 @@ train = TensorDataset(train_data, train_labels)
 test = TensorDataset(test_data, test_labels)
 
 train_loader = DataLoader(train, batch_size=train_batch_size, shuffle=True)
-test_loader = DataLoader(test, batch_size=test_batch_size, shuffle=True)
+test_loader = DataLoader(test, batch_size=test_batch_size, shuffle=False)
 
-model = RNN(input_dim, hidden_dim, output_dim, num_layers)
+model = RNN(input_dim, hidden_dim, output_dim, num_layers, pred_length, dropout)
 model.to(device)
 
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 scheduler = optim.lr_scheduler.CyclicLR(
     optimizer,
-    base_lr=1e-8,  # Minimum learning rate
-    max_lr=1e-4,  # Maximum learning rate
+    base_lr=1e-5,  # Minimum learning rate
+    max_lr=1e-3,  # Maximum learning rate
     step_size_up=2500,  # Number of iterations to reach max_lr
-    mode="triangular2",  # Strategy for the cyclic pattern
+    mode="triangular2",
 )
 
 wandb.init(
     project="RNN Trader",
     config={
-        "learning_rate": 0.0001,
+        "learning_rate": {lr},
         "architecture": "GRU",
         "dataset": "TQQQ-15min",
-        "epochs": 90,
+        "epochs": {num_epochs},
     },
 )
 
@@ -97,7 +97,6 @@ for epoch in range(num_epochs):
     for batch, targets in train_loader:
         batch, targets = batch.to(device), targets.to(device)
         model.train()
-
         outputs = model(batch)
 
         loss = criterion(outputs, targets)

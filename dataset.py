@@ -10,6 +10,7 @@ def create_sequences(
     split_percent,
     data_scaler,
     target_scaler,
+    shuffle=True,
 ):
     sequences = []
     targets = []
@@ -34,7 +35,10 @@ def create_sequences(
     sequences = torch.stack(sequences)
     targets = torch.stack(targets)
 
-    targets = targets.flatten(1, 2)
+    if shuffle:
+        indices = torch.randperm(sequences.size(0))
+        sequences = sequences[indices]
+        targets = targets[indices]
 
     split = int(sequences.shape[0] * split_percent)
     train_sequences = sequences[:split]
