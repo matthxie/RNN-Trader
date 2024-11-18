@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 import joblib
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
@@ -60,6 +61,12 @@ class StockDataset:
         return train_sequences, train_targets, test_sequences, test_targets
 
     def transform(self, inputs, targets):
+        inputs = np.where(inputs > 0.0000000001, inputs, 1e-10)
+        targets = np.where(targets > 0.0000000001, targets, 1e-10)
+
+        inputs = np.log(inputs)
+        targets = np.log(targets)
+
         inputs = torch.from_numpy(self.input_scaler.fit_transform(inputs)).to(
             dtype=torch.float32
         )
@@ -71,11 +78,13 @@ class StockDataset:
 
     def inverse_transform_inputs(self, inputs):
         inputs = self.input_scaler.inverse_transform(inputs)
+        inputs = np.exp(inputs)
 
         return inputs
 
     def inverse_transform_targets(self, targets):
         targets = self.target_scaler.inverse_transform(targets)
+        targets = np.exp(targets)
 
         return targets
 

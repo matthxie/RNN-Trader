@@ -3,7 +3,6 @@ import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 import pandas as pd
-import wandb
 from rnn import RNN
 from stock_dataset import StockDataset
 
@@ -28,7 +27,7 @@ input_features = [
 target_features = ["high", "low"]
 train_batch_size = 64
 test_batch_size = 1024
-num_epochs = 20
+num_epochs = 40
 seq_length = 15
 pred_length = 3
 overlap_length = 47
@@ -71,15 +70,6 @@ scheduler = optim.lr_scheduler.CyclicLR(
     mode="triangular2",
 )
 
-wandb.init(
-    project="RNN Trader",
-    config={
-        "learning_rate": {lr},
-        "architecture": "GRU",
-        "dataset": "TQQQ-15min",
-        "epochs": {num_epochs},
-    },
-)
 
 count = 0
 
@@ -89,7 +79,7 @@ for epoch in range(num_epochs):
         model.train()
         outputs = model(batch)
 
-        loss = criterion(outputs, targets)
+        loss = torch.sqrt(criterion(outputs, targets))
 
         optimizer.zero_grad()
         loss.backward()
@@ -108,7 +98,7 @@ for epoch in range(num_epochs):
         with torch.no_grad():
             outputs = model(batch)
 
-        mse = criterion(outputs, targets)
+        mse = torch.sqrt(criterion(outputs, targets))
         accuracy += mse.item()
         total += 1
 
@@ -121,8 +111,6 @@ for epoch in range(num_epochs):
             count, loss, accuracy / total
         )
     )
-    wandb.log({"Train Loss": loss, "Test Loss:": accuracy / total})
 
-wandb.finish()
 torch.save(model.state_dict(), "rnn_model.pth")
 stock_dataset.save_parameters()

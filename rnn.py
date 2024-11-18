@@ -14,14 +14,8 @@ class RNN(nn.Module):
         self.num_layers = num_layers
 
         self.dropout = nn.Dropout(dropout)
-        self.linear1 = nn.Linear(input_dim, hidden_dim)
-        self.rnn = nn.RNN(
-            input_dim, hidden_dim, num_layers, nonlinearity="relu", batch_first=True
-        )
         self.gru = nn.GRU(input_dim, hidden_dim, num_layers, batch_first=True)
-        self.lstm = nn.LSTM(input_dim, hidden_dim, num_layers, batch_first=True)
-        self.linear2 = nn.Linear(hidden_dim, output_dim * pred_length)
-        self.batch_norm = nn.BatchNorm1d(hidden_dim)
+        self.linear = nn.Linear(hidden_dim, output_dim * pred_length)
 
         self.init_weights()
 
@@ -33,13 +27,9 @@ class RNN(nn.Module):
                     nn.init.zeros_(layer.bias)
 
     def forward(self, x):
-        # out = self.linear1(x)
-        # out = self.batch_norm(out)
-        # out = self.relu(out)
         out, _ = self.gru(x)
         out = self.dropout(out)
-        # out = out.view(-1, self.output_dim)
-        out = self.linear2(out[:, -1, :])
+        out = self.linear(out[:, -1, :])
         out = out.view(-1, self.pred_length, self.output_dim)
 
         return out
