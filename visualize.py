@@ -2,10 +2,8 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 import pandas as pd
 import matplotlib.pyplot as plt
-from random import randint
-import joblib
 from rnn import RNN
-import dataset
+from stock_dataset import StockDataset
 
 device = (
     torch.device("cuda")
@@ -47,18 +45,15 @@ lr = 1e-3
 data = pd.read_csv("TQQQ15min.csv")
 data = data[input_features]
 
-data_scaler = joblib.load("data_scaler.save")
-target_scaler = joblib.load("target_scaler.save")
+stock_dataset = StockDataset.load_parameters("transform.save")
 
-train_data, train_labels, test_data, test_labels = dataset.create_sequences(
+train_data, train_labels, test_data, test_labels = stock_dataset.create_sequences(
     data,
     seq_length,
     pred_length,
     overlap_length,
     target_features,
     0.8,
-    data_scaler,
-    target_scaler,
 )
 
 model = RNN(input_dim, hidden_dim, output_dim, num_layers, pred_length, dropout)
@@ -90,9 +85,9 @@ for input, label in test_loader:
     print(prediction)
     print(label)
 
-    prediction = target_scaler.inverse_transform(prediction)
-    input = data_scaler.inverse_transform(input)
-    label = target_scaler.inverse_transform(label)
+    prediction = stock_dataset.inverse_transform_targets(prediction)
+    input = stock_dataset.inverse_transform_inputs(input)
+    label = stock_dataset.inverse_transform_targets(label)
 
     print(prediction)
     print(label)
@@ -138,5 +133,5 @@ for input, label in test_loader:
     plt.show()
 
     count += 1
-    if count > 10:
+    if count > 20:
         break

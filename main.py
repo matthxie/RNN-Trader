@@ -2,12 +2,10 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
-from sklearn.preprocessing import MinMaxScaler
-import joblib
 import pandas as pd
 import wandb
 from rnn import RNN
-import dataset
+from stock_dataset import StockDataset
 
 device = (
     torch.device("cuda")
@@ -48,24 +46,16 @@ lr = 1e-3
 
 data = pd.read_csv("TQQQ15min.csv")
 data = data[input_features]
-data_scaler = MinMaxScaler()
-target_scaler = MinMaxScaler()
 
-train_data, train_labels, test_data, test_labels = dataset.create_sequences(
-    data,
-    seq_length,
-    pred_length,
-    overlap_length,
-    target_features,
-    0.8,
-    data_scaler,
-    target_scaler,
+stock_dataset = StockDataset()
+train_data, train_labels, test_data, test_labels = stock_dataset.create_sequences(
+    data, seq_length, pred_length, overlap_length, target_features, 0.8, True
 )
 
 train = TensorDataset(train_data, train_labels)
 test = TensorDataset(test_data, test_labels)
 
-train_loader = DataLoader(train, batch_size=train_batch_size, shuffle=True)
+train_loader = DataLoader(train, batch_size=train_batch_size, shuffle=False)
 test_loader = DataLoader(test, batch_size=test_batch_size, shuffle=False)
 
 model = RNN(input_dim, hidden_dim, output_dim, num_layers, pred_length, dropout)
@@ -135,5 +125,4 @@ for epoch in range(num_epochs):
 
 wandb.finish()
 torch.save(model.state_dict(), "rnn_model.pth")
-joblib.dump(data_scaler, "data_scaler.save")
-joblib.dump(target_scaler, "target_scaler.save")
+stock_dataset.save_parameters()
